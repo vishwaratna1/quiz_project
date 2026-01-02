@@ -10,13 +10,14 @@ from app.schemas import (
     QuizCreate, QuizUpdate, QuizResponse, QuizWithQuestions,
     QuestionCreate, QuestionUpdate, QuestionResponse
 )
+from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 # Quiz CRUD
 @router.post("/quizzes", response_model=QuizResponse, status_code=status.HTTP_201_CREATED)
-def create_quiz(quiz: QuizCreate, db: Session = Depends(get_db)):
+def create_quiz(quiz: QuizCreate, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     db_quiz = Quiz(**quiz.dict())
     db.add(db_quiz)
     db.commit()
@@ -25,13 +26,13 @@ def create_quiz(quiz: QuizCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/quizzes", response_model=List[QuizResponse])
-def list_quizzes(db: Session = Depends(get_db)):
+def list_quizzes(db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     quizzes = db.query(Quiz).order_by(Quiz.created_at.desc()).all()
     return quizzes
 
 
 @router.get("/quizzes/{quiz_id}", response_model=QuizWithQuestions)
-def get_quiz(quiz_id: UUID, db: Session = Depends(get_db)):
+def get_quiz(quiz_id: UUID, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
@@ -39,7 +40,7 @@ def get_quiz(quiz_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.put("/quizzes/{quiz_id}", response_model=QuizResponse)
-def update_quiz(quiz_id: UUID, quiz_update: QuizUpdate, db: Session = Depends(get_db)):
+def update_quiz(quiz_id: UUID, quiz_update: QuizUpdate, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     db_quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
     if not db_quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
@@ -54,7 +55,7 @@ def update_quiz(quiz_id: UUID, quiz_update: QuizUpdate, db: Session = Depends(ge
 
 
 @router.delete("/quizzes/{quiz_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_quiz(quiz_id: UUID, db: Session = Depends(get_db)):
+def delete_quiz(quiz_id: UUID, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     db_quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
     if not db_quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
@@ -66,7 +67,7 @@ def delete_quiz(quiz_id: UUID, db: Session = Depends(get_db)):
 
 # Question CRUD
 @router.post("/quizzes/{quiz_id}/questions", response_model=QuestionResponse, status_code=status.HTTP_201_CREATED)
-def create_question(quiz_id: UUID, question: QuestionCreate, db: Session = Depends(get_db)):
+def create_question(quiz_id: UUID, question: QuestionCreate, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     # Verify quiz exists
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
     if not quiz:
@@ -113,7 +114,7 @@ def create_question(quiz_id: UUID, question: QuestionCreate, db: Session = Depen
 
 
 @router.put("/questions/{question_id}", response_model=QuestionResponse)
-def update_question(question_id: UUID, question_update: QuestionUpdate, db: Session = Depends(get_db)):
+def update_question(question_id: UUID, question_update: QuestionUpdate, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     db_question = db.query(Question).filter(Question.id == question_id).first()
     if not db_question:
         raise HTTPException(status_code=404, detail="Question not found")
@@ -164,7 +165,7 @@ def update_question(question_id: UUID, question_update: QuestionUpdate, db: Sess
 
 
 @router.delete("/questions/{question_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_question(question_id: UUID, db: Session = Depends(get_db)):
+def delete_question(question_id: UUID, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     db_question = db.query(Question).filter(Question.id == question_id).first()
     if not db_question:
         raise HTTPException(status_code=404, detail="Question not found")

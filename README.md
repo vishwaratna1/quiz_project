@@ -77,11 +77,21 @@ Once all services are running, access:
 
 ## Usage Guide
 
+### Admin Authentication
+
+**Default Credentials:**
+- Username: `admin`
+- Password: `admin`
+
+**Important**: Change these credentials in production! See the `backend/app/auth.py` file.
+
 ### Creating Your First Quiz
 
-1. **Navigate to Admin Dashboard**
-   - Go to http://localhost:5173/admin
-   - Or click "Admin Dashboard" from the home page
+1. **Login to Admin Dashboard**
+   - Go to http://localhost:5173/admin/login
+   - Or click "Admin Login" from the home page
+   - Enter credentials: username `admin`, password `admin`
+   - You'll be redirected to the admin dashboard
 
 2. **Create a New Quiz**
    - Click the "+ New Quiz" button
@@ -208,16 +218,24 @@ quiz_project/
 
 ## API Endpoints
 
+### Auth Endpoints
+
+- `POST /api/auth/login` - Admin login (returns JWT token)
+  - Requires: `username` and `password` (form data)
+  - Returns: `access_token` and `token_type`
+
 ### Admin Endpoints
 
-- `POST /api/admin/quizzes` - Create a new quiz
-- `GET /api/admin/quizzes` - List all quizzes
-- `GET /api/admin/quizzes/{quiz_id}` - Get quiz details
-- `PUT /api/admin/quizzes/{quiz_id}` - Update quiz
-- `DELETE /api/admin/quizzes/{quiz_id}` - Delete quiz
-- `POST /api/admin/quizzes/{quiz_id}/questions` - Add question
-- `PUT /api/admin/questions/{question_id}` - Update question
-- `DELETE /api/admin/questions/{question_id}` - Delete question
+**All admin endpoints require authentication via Bearer token in Authorization header.**
+
+- `POST /api/admin/quizzes` - Create a new quiz (🔒 Protected)
+- `GET /api/admin/quizzes` - List all quizzes (🔒 Protected)
+- `GET /api/admin/quizzes/{quiz_id}` - Get quiz details (🔒 Protected)
+- `PUT /api/admin/quizzes/{quiz_id}` - Update quiz (🔒 Protected)
+- `DELETE /api/admin/quizzes/{quiz_id}` - Delete quiz (🔒 Protected)
+- `POST /api/admin/quizzes/{quiz_id}/questions` - Add question (🔒 Protected)
+- `PUT /api/admin/questions/{question_id}` - Update question (🔒 Protected)
+- `DELETE /api/admin/questions/{question_id}` - Delete question (🔒 Protected)
 
 ### Public Endpoints
 
@@ -407,16 +425,25 @@ docker-compose up --build
 
 ### Using cURL Examples
 
-**Create a quiz:**
+**Login and get token:**
+```bash
+TOKEN=$(curl -X POST "http://localhost:8000/api/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=admin" | jq -r '.access_token')
+```
+
+**Create a quiz (with authentication):**
 ```bash
 curl -X POST "http://localhost:8000/api/admin/quizzes" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{"title": "Test Quiz", "description": "A test quiz"}'
 ```
 
-**Get all quizzes:**
+**Get all quizzes (with authentication):**
 ```bash
-curl "http://localhost:8000/api/admin/quizzes"
+curl "http://localhost:8000/api/admin/quizzes" \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 **Get a quiz for taking:**
@@ -475,18 +502,50 @@ Key tables:
 - `quiz_attempts` - User quiz submissions
 - `quiz_responses` - Individual question responses
 
+## Security Notes
+
+### Authentication
+
+- **Default Credentials**: The system comes with default admin credentials (`admin`/`admin`)
+- **JWT Tokens**: Authentication uses JWT tokens with 30-minute expiration
+- **Token Storage**: Frontend stores tokens in localStorage
+- **Password Hashing**: Passwords are hashed using bcrypt
+
+### Changing Default Credentials
+
+To change the default admin credentials, edit `backend/app/auth.py`:
+
+```python
+ADMIN_USERNAME = "your_username"
+ADMIN_PASSWORD_HASH = pwd_context.hash("your_password")
+```
+
+**For production**, consider:
+- Storing credentials in environment variables
+- Using a database to store admin users
+- Implementing password reset functionality
+- Adding rate limiting to login endpoint
+
 ## Production Deployment
 
 For production deployment, consider:
 
 1. **Environment Variables**: Use `.env` files or secrets management
+   - Change `SECRET_KEY` in `backend/app/auth.py` to a strong random string
+   - Store credentials securely
 2. **Database**: Use managed PostgreSQL service
-3. **Security**: Add authentication/authorization
+3. **Security**: 
+   - ✅ Authentication/authorization (implemented)
+   - Change default admin credentials
+   - Use strong JWT secret key
+   - Implement HTTPS
 4. **HTTPS**: Configure SSL/TLS certificates
-5. **CORS**: Restrict allowed origins
+5. **CORS**: Restrict allowed origins to your domain
 6. **Database Migrations**: Use Alembic for schema migrations
 7. **Logging**: Set up proper logging and monitoring
 8. **Backup**: Configure automated database backups
+9. **Rate Limiting**: Add rate limiting to prevent brute force attacks
+10. **Token Refresh**: Consider implementing refresh tokens for better security
 
 ## Contributing
 

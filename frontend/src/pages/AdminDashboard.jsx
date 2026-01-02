@@ -1,15 +1,23 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { adminAPI } from '../api'
+import { auth } from '../utils/auth'
 import QuizForm from '../components/QuizForm'
 import QuizList from '../components/QuizList'
 import QuestionForm from '../components/QuestionForm'
 
 function AdminDashboard() {
+  const navigate = useNavigate()
   const [quizzes, setQuizzes] = useState([])
   const [selectedQuiz, setSelectedQuiz] = useState(null)
   const [showQuizForm, setShowQuizForm] = useState(false)
   const [showQuestionForm, setShowQuestionForm] = useState(false)
   const [loading, setLoading] = useState(true)
+
+  const handleLogout = () => {
+    auth.removeToken()
+    navigate('/admin/login')
+  }
 
   useEffect(() => {
     loadQuizzes()
@@ -91,6 +99,12 @@ function AdminDashboard() {
               >
                 Home
               </a>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>

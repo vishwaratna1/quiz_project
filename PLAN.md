@@ -57,7 +57,12 @@ A production-ready Quiz Management System with an admin panel for quiz creation/
 
 ## API Endpoints
 
-### Admin Endpoints
+### Authentication Endpoints
+- `POST /api/auth/login` - Admin login (returns JWT token)
+  - Body: `username` and `password` (form data)
+  - Response: `{access_token: string, token_type: "bearer"}`
+
+### Admin Endpoints (All require Bearer token authentication)
 - `POST /api/admin/quizzes` - Create a new quiz
 - `GET /api/admin/quizzes` - List all quizzes
 - `GET /api/admin/quizzes/{quiz_id}` - Get quiz details with questions
@@ -73,7 +78,12 @@ A production-ready Quiz Management System with an admin panel for quiz creation/
 
 ## Assumptions
 
-1. **Authentication**: For MVP, admin endpoints are unprotected. In production, add authentication/authorization.
+1. **Authentication**: 
+   - Admin endpoints are protected with JWT token-based authentication
+   - Default credentials: username `admin`, password `admin`
+   - Tokens expire after 30 minutes
+   - Public endpoints remain unprotected (anyone can take quizzes)
+   - In production, change default credentials and use environment variables for secrets
 2. **Question Types**:
    - **MCQ**: Multiple choice with one or more correct answers (we'll support single correct answer for simplicity)
    - **True/False**: Binary choice question
@@ -90,7 +100,12 @@ A production-ready Quiz Management System with an admin panel for quiz creation/
 
 ## Trade-offs
 
-1. **No User Authentication**: Simplified for MVP. Production would need user accounts, JWT tokens, etc.
+1. **Admin Authentication**: 
+   - ✅ Implemented with JWT tokens
+   - Default credentials hardcoded (change in production)
+   - Single admin user (could be extended to multiple admins in database)
+   - No password reset functionality (add in production)
+2. **Public User Authentication**: Not implemented - anyone can take quizzes without login
 2. **Text Answer Matching**: Simple exact match (case-insensitive). Production might use fuzzy matching or manual grading.
 3. **Single Correct Answer for MCQ**: Simplified. Could extend to multiple correct answers later.
 4. **No Quiz Attempt Limits**: Users can retake quizzes. Production might limit attempts.

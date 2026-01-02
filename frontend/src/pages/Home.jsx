@@ -14,10 +14,10 @@ function Home() {
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              to="/admin"
+              to="/admin/login"
               className="px-8 py-4 bg-indigo-600 text-white rounded-lg font-semibold text-center hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg"
             >
-              Admin Dashboard
+              Admin Login
             </Link>
             <div className="px-8 py-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-center">
               Enter Quiz ID to take a quiz
