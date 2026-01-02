@@ -369,11 +369,21 @@ docker-compose exec backend python -c "from app.database import Base, engine; Ba
   - Default: `postgresql://quiz_user:quiz_password@db:5432/quiz_db`
   - Format: `postgresql://user:password@host:port/database`
 
+- `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins
+  - Default: `http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000`
+  - Example for production: `https://yourdomain.com,https://www.yourdomain.com`
+  - **Important**: Must include your frontend URL when deployed
+
+- `ALLOW_ALL_ORIGINS`: Set to `"true"` to allow all origins (NOT recommended for production)
+  - Default: `false`
+  - Use only for development/testing
+
 ### Frontend Environment Variables
 
 - `VITE_API_URL`: Backend API URL
   - Default: `http://localhost:8000`
   - Used for API calls from frontend
+  - **For production**: Set to your backend URL (e.g., `https://api.yourdomain.com`)
 
 To modify these, edit `docker-compose.yml` or create a `.env` file.
 
@@ -528,23 +538,88 @@ ADMIN_PASSWORD_HASH = pwd_context.hash("your_password")
 
 ## Production Deployment
 
-For production deployment, consider:
+### CORS Configuration for Production
+
+When deploying to a server, you **must** configure CORS to allow your frontend origin:
+
+1. **Set ALLOWED_ORIGINS environment variable** with your frontend URL(s):
+   ```bash
+   # In docker-compose.yml or .env file
+   ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+   ```
+
+2. **Update frontend API URL**:
+   ```bash
+   # In frontend/.env or docker-compose.yml
+   VITE_API_URL=https://api.yourdomain.com
+   ```
+
+3. **Example docker-compose.yml for production**:
+   ```yaml
+   backend:
+     environment:
+       - ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+   
+   frontend:
+     environment:
+       - VITE_API_URL=https://api.yourdomain.com
+   ```
+
+### Fixing "strict-origin-when-cross-origin" Error
+
+If you see this error, it means CORS is blocking the request. Fix it by:
+
+1. **Check your frontend URL** - What URL is your frontend running on?
+2. **Add it to ALLOWED_ORIGINS**:
+   ```bash
+   # If frontend is at http://your-server-ip:5173
+   ALLOWED_ORIGINS=http://your-server-ip:5173,http://localhost:5173
+   
+   # If frontend is at https://yourdomain.com
+   ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+   ```
+
+3. **Restart backend** after changing CORS settings:
+   ```bash
+   docker-compose restart backend
+   ```
+
+4. **For quick testing** (NOT for production), you can temporarily allow all origins:
+   ```bash
+   ALLOW_ALL_ORIGINS=true
+   ```
+
+### Complete Production Checklist
 
 1. **Environment Variables**: Use `.env` files or secrets management
    - Change `SECRET_KEY` in `backend/app/auth.py` to a strong random string
+   - Set `ALLOWED_ORIGINS` to your actual frontend domain(s)
+   - Set `VITE_API_URL` to your backend URL
    - Store credentials securely
+
 2. **Database**: Use managed PostgreSQL service
+
 3. **Security**: 
    - ✅ Authentication/authorization (implemented)
+   - ✅ CORS configuration (configurable via environment)
    - Change default admin credentials
    - Use strong JWT secret key
    - Implement HTTPS
-4. **HTTPS**: Configure SSL/TLS certificates
-5. **CORS**: Restrict allowed origins to your domain
+
+4. **HTTPS**: Configure SSL/TLS certificates for both frontend and backend
+
+5. **CORS**: 
+   - ✅ Restrict allowed origins to your domain (via ALLOWED_ORIGINS)
+   - Never use `ALLOW_ALL_ORIGINS=true` in production
+
 6. **Database Migrations**: Use Alembic for schema migrations
+
 7. **Logging**: Set up proper logging and monitoring
+
 8. **Backup**: Configure automated database backups
+
 9. **Rate Limiting**: Add rate limiting to prevent brute force attacks
+
 10. **Token Refresh**: Consider implementing refresh tokens for better security
 
 ## Contributing

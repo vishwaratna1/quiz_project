@@ -30,6 +30,12 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://quiz_user:quiz_password@db:5432/quiz_db
+      # CORS: Add your frontend URL(s) here, comma-separated
+      # For production, set to your actual domain(s)
+      # Example: ALLOWED_ORIGINS=http://localhost:5173,https://yourdomain.com
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
+      # Set to "true" to allow all origins (NOT recommended for production)
+      # - ALLOW_ALL_ORIGINS=true
     depends_on:
       db:
         condition: service_healthy
